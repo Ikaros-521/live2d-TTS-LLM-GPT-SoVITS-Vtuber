@@ -2,6 +2,8 @@
 
 # 安装 node.js
 
+https://nodejs.cn/download/
+
 # 运行命令
 
 ```
