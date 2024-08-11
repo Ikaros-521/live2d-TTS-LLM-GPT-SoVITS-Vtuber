@@ -14,7 +14,7 @@
 
   <body>
     <canvas id="canvas"></canvas>
-
+    <button id="hide_show_config" style="position: absolute; top: 0;">显隐配置项</button>
     <div id="control">
       <button id="play">测试音频</button>
       <button onclick="JavaScript:window.location.href='/'">返回菜单</button>
@@ -319,6 +319,11 @@
               console.error(error);
               alert(error);
             });
+        });
+
+        $("#hide_show_config").click(function () {
+          // 显示或隐藏div
+          $("#control").toggle();
         });
 
         $("#play").click(function () {
