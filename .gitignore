@@ -46,3 +46,6 @@ access.log
 public/css/user.css
 /plugins/
 *.msi
+
+out/*.wav
+out/*.mp3
