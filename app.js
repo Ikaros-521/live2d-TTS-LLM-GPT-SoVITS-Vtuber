@@ -142,6 +142,24 @@ app.set("view engine", "html");
 // 创建 multer 实例
 const upload = multer({ storage: storage });
 
+// 同步地遍历目录并返回目录名
+function getSubdirectories(dirPath) {
+    return new Promise((resolve, reject) => {
+        fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
+            if (err) {
+                return reject(err);
+            }
+
+            // 过滤出目录项
+            const directories = files
+                .filter((file) => file.isDirectory())
+                .map((file) => file.name);
+
+            resolve(directories);
+        });
+    });
+}
+
 // 上传文件
 app.post("/upload", upload.single("image"), (req, res) => {
     if (!req.file) {
@@ -205,202 +223,26 @@ app.get("/edit_config", (req, res) => {
     });
 });
 
-// 文字转语音 页面操作
-app.get("/tts", (req, res) => {
-    var filePath = "./config.json";
-
-    // 同步地遍历目录并返回目录名
-    function getSubdirectories(dirPath) {
-        return new Promise((resolve, reject) => {
-            fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                // 过滤出目录项
-                const directories = files
-                    .filter((file) => file.isDirectory())
-                    .map((file) => file.name);
-
-                resolve(directories);
-            });
-        });
-    }
-
-    // 指定目标目录路径
-    const targetDir = "./models/";
-
-    var dis;
-
-    // 获取目标目录下的所有目录名
-    getSubdirectories(targetDir)
-        .then((directories) => {
-            dis = directories;
-        })
-        .catch((err) => {
-            console.error(err);
-        });
-
-    // 读取文件内容
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            res.status(500).send("Error reading file,配置文件不存在");
-        } else {
-            console.log(data);
-
-            const jsonData = JSON.parse(data);
-            const modelPath = jsonData.model_path;
-
-            dis = JSON.stringify(dis);
-
-            res.render(__dirname + "/live2d_test", {
-                model_path: modelPath,
-                model_list: dis,
-            });
-        }
-    });
-});
-
-// 大模型 页面操作
-app.get("/llm", (req, res) => {
-    var filePath = "./config.json";
-
-    // 同步地遍历目录并返回目录名
-    function getSubdirectories(dirPath) {
-        return new Promise((resolve, reject) => {
-            fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                // 过滤出目录项
-                const directories = files
-                    .filter((file) => file.isDirectory())
-                    .map((file) => file.name);
-
-                resolve(directories);
-            });
-        });
-    }
-
-    // 指定目标目录路径
-    const targetDir = "./models/";
-
-    var dis;
-
-    // 获取目标目录下的所有目录名
-    getSubdirectories(targetDir)
-        .then((directories) => {
-            dis = directories;
-        })
-        .catch((err) => {
-            console.error(err);
-        });
-
-    // 读取文件内容
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            res.status(500).send("Error reading file,配置文件不存在");
-        } else {
-            console.log(data);
-
-            const jsonData = JSON.parse(data);
-            const modelPath = jsonData.model_path;
-
-            dis = JSON.stringify(dis);
-
-            res.render(__dirname + "/live2d_llm", {
-                model_path: modelPath,
-                model_list: dis,
-            });
-        }
-    });
-});
-
 // 首页
 app.get("/", (req, res) => {
     console.log("访问首页");
     res.render(__dirname + "/index");
 });
 
-// 文字转语音 edge页面操作
-app.get("/tts_edge", (req, res) => {
-    var filePath = "./config.json";
-
-    // 同步地遍历目录并返回目录名
-    function getSubdirectories(dirPath) {
-        return new Promise((resolve, reject) => {
-            fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                // 过滤出目录项
-                const directories = files
-                    .filter((file) => file.isDirectory())
-                    .map((file) => file.name);
-
-                resolve(directories);
-            });
-        });
+app.get('/api/live2d-models', async (req, res) => {
+    try {
+        const directories = await getSubdirectories(path.join(__dirname, "models"));
+        res.json({ model_list: directories });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Error reading directory" });
     }
-
-    // 指定目标目录路径
-    const targetDir = "./models/";
-
-    var dis;
-
-    // 获取目标目录下的所有目录名
-    getSubdirectories(targetDir)
-        .then((directories) => {
-            dis = directories;
-        })
-        .catch((err) => {
-            console.error(err);
-        });
-
-    // 读取文件内容
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            res.status(500).send("Error reading file,配置文件不存在");
-        } else {
-            console.log(data);
-
-            const jsonData = JSON.parse(data);
-            const modelPath = jsonData.model_path;
-
-            dis = JSON.stringify(dis);
-
-            res.render(__dirname + "/live2d_edge_tts", {
-                model_path: modelPath,
-                model_list: dis,
-            });
-        }
-    });
 });
 
 // 定制页面
 app.get("/live2d", (req, res) => {
     // 配置文件存储着模型名
     var filePath = "./config.json";
-
-    // 同步地遍历目录并返回目录名
-    function getSubdirectories(dirPath) {
-        return new Promise((resolve, reject) => {
-            fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                // 过滤出目录项
-                const directories = files
-                    .filter((file) => file.isDirectory())
-                    .map((file) => file.name);
-
-                resolve(directories);
-            });
-        });
-    }
 
     // 指定目标目录路径
     const targetDir = "./models/";
@@ -429,62 +271,6 @@ app.get("/live2d", (req, res) => {
             dis = JSON.stringify(dis);
 
             res.render(__dirname + "/live2d", {
-                model_path: modelPath,
-                model_list: dis,
-            });
-        }
-    });
-});
-
-// 大模型 edge_tts
-app.get("/llm_edge_tts", (req, res) => {
-    var filePath = "./config.json";
-
-    // 同步地遍历目录并返回目录名
-    function getSubdirectories(dirPath) {
-        return new Promise((resolve, reject) => {
-            fs.readdir(dirPath, { withFileTypes: true }, (err, files) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                // 过滤出目录项
-                const directories = files
-                    .filter((file) => file.isDirectory())
-                    .map((file) => file.name);
-
-                resolve(directories);
-            });
-        });
-    }
-
-    // 指定目标目录路径
-    const targetDir = "./models/";
-
-    var dis;
-
-    // 获取目标目录下的所有目录名
-    getSubdirectories(targetDir)
-        .then((directories) => {
-            dis = directories;
-        })
-        .catch((err) => {
-            console.error(err);
-        });
-
-    // 读取文件内容
-    fs.readFile(filePath, "utf8", (err, data) => {
-        if (err) {
-            res.status(500).send("Error reading file,配置文件不存在");
-        } else {
-            console.log(data);
-
-            const jsonData = JSON.parse(data);
-            const modelPath = jsonData.model_path;
-
-            dis = JSON.stringify(dis);
-
-            res.render(__dirname + "/live2d_llm_edge_tts", {
                 model_path: modelPath,
                 model_list: dis,
             });
