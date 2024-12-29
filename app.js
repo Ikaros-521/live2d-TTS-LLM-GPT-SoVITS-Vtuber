@@ -81,36 +81,39 @@ async function saveAudioFile(audioPath, outputPath) {
     }
 */
 app.post('/ws', async (req, res) => {
-    const message_json = req.body;
+    try {
+        const message_json = req.body;
+        // console.log(message_json);
 
-    // console.log(message_json);
+        if (message_json.action === 'talk') {
+            console.log("请求talk方法");
+            const audioPath = message_json.data.audio_path;
+            const audioUrl = path.join(outDir, path.basename(audioPath));
 
-    if (message_json.action === 'talk') {
-        console.log("请求talk方法");
-        const audioPath = message_json.data.audio_path;
-        const audioUrl = path.join(outDir, path.basename(audioPath));
+            // 下载并保存音频文件
+            await saveAudioFile(audioPath, audioUrl);
 
-        // 下载并保存音频文件
-        await saveAudioFile(audioPath, audioUrl);
+            // 生成 Linux 风格的相对路径
+            let relativeAudioPath = path.relative(__dirname, audioUrl);
 
-        // 生成 Linux 风格的相对路径
-        let relativeAudioPath = path.relative(__dirname, audioUrl);
+            // 将路径中的反斜杠替换为正斜杠，并确保路径以 './' 开头
+            // relativeAudioPath = relativeAudioPath.replace(/\\/g, '/');
+            // if (!relativeAudioPath.startsWith('./')) {
+            //   relativeAudioPath = `./${relativeAudioPath}`;
+            // }
 
-        // 将路径中的反斜杠替换为正斜杠，并确保路径以 './' 开头
-        // relativeAudioPath = relativeAudioPath.replace(/\\/g, '/');
-        // if (!relativeAudioPath.startsWith('./')) {
-        //   relativeAudioPath = `./${relativeAudioPath}`;
-        // }
+            ws_clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    console.log("发送音频路径到WS客户端，" + client.url);
+                    client.send(JSON.stringify({ action: 'talk', audio_path: relativeAudioPath }));
+                }
+            });
+        }
 
-        ws_clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                console.log("发送音频路径到WS客户端，" + client.url);
-                client.send(JSON.stringify({ action: 'talk', audio_path: relativeAudioPath }));
-            }
-        });
+        res.status(200).json({ message: '广播数据到所有WS客户端成功' });
+    } catch (error) {
+        console.error('Failed to process message:', error);
     }
-
-    res.status(200).json({ message: '广播数据到所有WS客户端成功' });
 });
 
 
